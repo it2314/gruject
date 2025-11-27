@@ -6,4 +6,6 @@ pytest>=7.0
 email-validator>=1.2
 Flask-SQLAlchemy>=3.0
 psycopg2-binary>=2.9
+mysqlclient>=2.1
+pymysql>=1.0
 

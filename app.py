@@ -3,16 +3,42 @@ from forms import ContactForm
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 import os
+import logging
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'replace-this-with-secure-random-in-prod')
 
+logger = logging.getLogger(__name__)
+
+
 # Database configuration: prefer DATABASE_URL (Postgres) for Kubernetes, fallback to SQLite file
-database_url = os.environ.get('DATABASE_URL')
-if database_url:
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data.db'
+def build_database_uri():
+    raw = os.environ.get('DATABASE_URL', '')
+    if raw:
+        raw = raw.strip()
+        # try to validate the given URL using SQLAlchemy's parser if available
+        try:
+            from sqlalchemy.engine.url import make_url
+
+            make_url(raw)
+            return raw
+        except Exception as e:
+            logger.warning('DATABASE_URL present but invalid: %s (%s)', raw, e)
+
+    # try to build URL from individual environment variables commonly used
+    user = os.environ.get('POSTGRES_USER') or os.environ.get('DB_USER') or os.environ.get('PGUSER')
+    password = os.environ.get('POSTGRES_PASSWORD') or os.environ.get('DB_PASSWORD') or os.environ.get('PGPASSWORD')
+    host = os.environ.get('POSTGRES_HOST') or os.environ.get('DB_HOST') or os.environ.get('PGHOST') or 'postgres'
+    db = os.environ.get('POSTGRES_DB') or os.environ.get('DB_NAME') or os.environ.get('PGDATABASE')
+    port = os.environ.get('POSTGRES_PORT') or os.environ.get('DB_PORT') or os.environ.get('PGPORT') or '5432'
+    if user and password and db:
+        return f'postgresql://{user}:{password}@{host}:{port}/{db}'
+
+    logger.warning('No valid DATABASE_URL or Postgres env vars found; falling back to sqlite.')
+    return 'sqlite:///data.db'
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = build_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
