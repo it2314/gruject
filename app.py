@@ -28,12 +28,31 @@ class Message(db.Model):
         return f"<Message {self.id} {self.email}>"
 
 
-@app.before_first_request
 def ensure_db():
     try:
         db.create_all()
     except SQLAlchemyError:
         # If DB isn't available at startup, continue; requests will fail when attempting to save
+        pass
+
+
+# Register the ensure_db hook if the Flask app exposes before_first_request.
+# Some runtime environments or frameworks may not provide that attribute;
+# in that case call ensure_db immediately as a best-effort fallback so
+# module import won't fail with AttributeError.
+if hasattr(app, 'before_first_request'):
+    try:
+        app.before_first_request(ensure_db)
+    except Exception:
+        # If registration fails for any reason, try to run once now.
+        try:
+            ensure_db()
+        except Exception:
+            pass
+else:
+    try:
+        ensure_db()
+    except Exception:
         pass
 
 
