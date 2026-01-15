@@ -41,6 +41,12 @@ def build_database_uri():
 app.config['SQLALCHEMY_DATABASE_URI'] = build_database_uri()
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# log chosen database URI (avoid printing secrets in production)
+try:
+    logger.info('Using SQLALCHEMY_DATABASE_URI=%s', app.config.get('SQLALCHEMY_DATABASE_URI'))
+except Exception:
+    pass
+
 db = SQLAlchemy(app)
 
 
@@ -56,9 +62,12 @@ class Message(db.Model):
 
 def ensure_db():
     try:
-        db.create_all()
-    except SQLAlchemyError:
+        # ensure we run create_all inside an application context
+        with app.app_context():
+            db.create_all()
+    except Exception as e:
         # If DB isn't available at startup, continue; requests will fail when attempting to save
+        logger.exception('ensure_db failed: %s', e)
         pass
 
 
