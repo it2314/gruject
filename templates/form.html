@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Grimoire — Contact</title>
+    <title>Grimoire — Chatroom</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Uncial+Antiqua&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -13,7 +13,7 @@
       <div class="container glass">
         <header class="text-center my-4">
           <h1 class="title">The Grimoire</h1>
-          <p class="subtitle">Contact us</p>
+          <p class="subtitle">Mystical Message Board</p>
         </header>
       {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
@@ -22,34 +22,84 @@
           {% endfor %}
         {% endif %}
       {% endwith %}
-      <form method="post" class="grimoire-form">
-        {{ form.hidden_tag() }}
-        <div class="mb-3">
-          {{ form.name.label(class_='form-label fancy-label') }}
-          {{ form.name(class_='form-control fancy-input') }}
-          {% for e in form.name.errors %}
-            <div class="text-danger small">{{ e }}</div>
-          {% endfor %}
+      
+      <!-- Messages Display Section -->
+      <div class="messages-section mb-5">
+        <div class="text-center mb-4">
+          <button id="toggleMessagesBtn" class="btn btn-magical-secondary" onclick="toggleMessages()">
+            📖 Show All Messages
+          </button>
         </div>
-        <div class="mb-3">
-          {{ form.email.label(class_='form-label fancy-label') }}
-          {{ form.email(class_='form-control fancy-input') }}
-          {% for e in form.email.errors %}
-            <div class="text-danger small">{{ e }}</div>
-          {% endfor %}
+        
+        <div id="messagesContainer" class="messages-container hidden">
+          <div class="messages-header">
+            <h3 class="fancy-label">✨ Messages from the Grimoire ✨</h3>
+          </div>
+          {% if all_messages %}
+            <div class="messages-list">
+              {% for msg in all_messages %}
+                <div class="message-bubble">
+                  <div class="message-header">
+                    <strong class="message-name">{{ msg.name }}</strong>
+                    <span class="message-email">{{ msg.email }}</span>
+                  </div>
+                  <div class="message-content">{{ msg.message }}</div>
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="empty-messages">
+              <p class="text-muted">No messages yet. Be the first to write!</p>
+            </div>
+          {% endif %}
         </div>
-        <div class="mb-3">
-          {{ form.message.label(class_='form-label fancy-label') }}
-          {{ form.message(class_='form-control fancy-input', rows=6) }}
-          {% for e in form.message.errors %}
-            <div class="text-danger small">{{ e }}</div>
-          {% endfor %}
-        </div>
-        <div class="text-center">
-          <button type="submit" class="btn btn-magical">Send Message</button>
-        </div>
-      </form>
+      </div>
+
+      <!-- Message Form -->
+      <div class="form-section">
+        <h3 class="text-center fancy-label mb-4">✍️ Write to the Grimoire</h3>
+        <form method="post" class="grimoire-form">
+          {{ form.hidden_tag() }}
+          <div class="mb-3">
+            {{ form.name.label(class_='form-label fancy-label') }}
+            {{ form.name(class_='form-control fancy-input') }}
+            {% for e in form.name.errors %}
+              <div class="text-danger small">{{ e }}</div>
+            {% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.email.label(class_='form-label fancy-label') }}
+            {{ form.email(class_='form-control fancy-input') }}
+            {% for e in form.email.errors %}
+              <div class="text-danger small">{{ e }}</div>
+            {% endfor %}
+          </div>
+          <div class="mb-3">
+            {{ form.message.label(class_='form-label fancy-label') }}
+            {{ form.message(class_='form-control fancy-input', rows=6) }}
+            {% for e in form.message.errors %}
+              <div class="text-danger small">{{ e }}</div>
+            {% endfor %}
+          </div>
+          <div class="text-center">
+            <button type="submit" class="btn btn-magical">Send Message</button>
+          </div>
+        </form>
+      </div>
     </div>
     </div>
+
+    <script>
+      function toggleMessages() {
+        const container = document.getElementById('messagesContainer');
+        const btn = document.getElementById('toggleMessagesBtn');
+        container.classList.toggle('hidden');
+        if (container.classList.contains('hidden')) {
+          btn.textContent = '📖 Show All Messages';
+        } else {
+          btn.textContent = '📖 Hide Messages';
+        }
+      }
+    </script>
   </body>
 </html>

@@ -10,6 +10,18 @@ spec:
     app: postgres
 
 ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,6 +41,7 @@ spec:
         image: postgres:15
         ports:
         - containerPort: 5432
+          name: postgres
         env:
         - name: POSTGRES_USER
           valueFrom:
@@ -45,9 +58,39 @@ spec:
             secretKeyRef:
               name: app-secrets
               key: POSTGRES_DB
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U $POSTGRES_USER
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
         volumeMounts:
         - name: pgdata
           mountPath: /var/lib/postgresql/data
       volumes:
       - name: pgdata
-        emptyDir: {} # replace with PVC for production
+        persistentVolumeClaim:
+          claimName: postgres-pvc

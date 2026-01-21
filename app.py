@@ -105,7 +105,24 @@ def index():
             db.session.rollback()
             flash('Could not save your message right now. Please try again later.', 'danger')
         return redirect(url_for('index'))
-    return render_template('form.html', form=form)
+    # Get all messages for display
+    all_messages = []
+    try:
+        all_messages = Message.query.order_by(Message.id.desc()).all()
+    except Exception as e:
+        logger.warning('Could not fetch messages: %s', e)
+    return render_template('form.html', form=form, all_messages=all_messages)
+
+
+@app.route('/messages', methods=['GET'])
+def get_messages():
+    try:
+        messages = Message.query.order_by(Message.id.desc()).all()
+        return render_template('messages.html', messages=messages)
+    except Exception as e:
+        logger.exception('Error fetching messages: %s', e)
+        flash('Could not load messages right now.', 'danger')
+        return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
